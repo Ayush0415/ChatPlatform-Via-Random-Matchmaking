@@ -1,1 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatConnect</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #chat-container {
+            width: 400px;
+            height: 500px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        #messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        #message-form {
+            display: flex;
+            padding: 10px;
+        }
+        #message-input {
+            flex: 1;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #send-btn {
+            padding: 5px 10px;
+            margin-left: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #send-btn:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin: 5px 0;
+        }
+        .message.self {
+            text-align: right;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="messages"></div>
+        <form id="message-form">
+            <input type="text" id="message-input" placeholder="Message bhejo..." autocomplete="off">
+            <button type="submit" id="send-btn">Send</button>
+        </form>
+    </div>
 
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let sessionId = null;
+
+        socket.on('session', (id) => {
+            sessionId = id;
+            addMessage(` Session ID: ${sessionId}`, false);
+        });
+
+        socket.on('waiting', (msg) => {
+            addMessage(msg, false);
+        });
+
+        socket.on('chat_start', (data) => {
+            addMessage(`matching done ${data.partnerId} `, false);
+        });
+
+        socket.on('message', (data) => {
+            addMessage(`${data.sender}: ${data.text}`, false);
+        });
+
+        socket.on('chat_end', (msg) => {
+            addMessage(msg, false);
+            document.getElementById('message-form').style.display = 'none';
+        });
+
+        document.getElementById('message-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (text) {
+                socket.emit('message', { text });
+                addMessage(`You: ${text}`, true);
+                input.value = '';
+            }
+        });
+
+        function addMessage(text, isSelf) {
+            const messages = document.getElementById('messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message' + (isSelf ? ' self' : '');
+            msgDiv.textContent = text;
+            messages.appendChild(msgDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+    <script>
+        function startChatting() {
+            window.location.href = 'http://localhost:3000'; 
+        }
+    </script>
+</body>
+</html>
